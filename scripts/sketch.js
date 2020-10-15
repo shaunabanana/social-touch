@@ -8,7 +8,7 @@ function setup() {
     detector = new TouchDetector(canvas);
     console.log(detector);
 
-    socket = new WebSocket('ws://localhost:8765');
+    socket = new WebSocket('ws://81.68.194.122:8765');
 
     // Connection opened
     socket.addEventListener('open', function (event) {
@@ -22,7 +22,7 @@ function setup() {
 }
 
 function draw() {
-    background(200);
+    clear();
     detector.draw();
     for (let touch of touches) {
         circle(touch.x, touch.y, touch.force * 100 + 20);

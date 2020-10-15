@@ -1,8 +1,10 @@
 html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: rgb(90,45,142);
+    background: radial-gradient(circle at top, rgba(90,45,142,1) 0%, rgba(44,9,121,1) 36%, rgba(0,29,34,1) 100%);
 }
 canvas {
-  display: block;
+    display: block;
 }
