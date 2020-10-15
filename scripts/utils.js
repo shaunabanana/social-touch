@@ -2,6 +2,15 @@ Number.prototype.map = function (in_min, in_max, out_min, out_max) {
     return (this - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+Number.prototype.constrain = function (min, max) {
+    if (this < min) {
+        return min;
+    } else if (this > max) {
+        return max;
+    }
+    return this;
+}
+
 function getDeviceType () {
     const ua = navigator.userAgent;
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
