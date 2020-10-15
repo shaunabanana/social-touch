@@ -1,17 +1,25 @@
+import json
 import asyncio
 import websockets
 
-peers = set()
+connections = set()
 
 async def hello(websocket, path):
-    name = await websocket.recv()
-    print(f"< {name}")
+    connections.add(websocket)
 
-    greeting = f"Hello {name}! There are {len(peers)} people on the server."
+    try:
+        while True:
+            data = await websocket.recv()
+            print(data)
 
-    await websocket.send(greeting)
-    print(f"> {greeting}")
+            peers = connections.difference(set([websocket]))
+            for peer in peers:
+                await peer.send(data)
 
+    finally:
+        connections.remove(websocket)
+
+print('Server running at port 8765...')
 start_server = websockets.serve(hello, "0.0.0.0", 8765)
 
 asyncio.get_event_loop().run_until_complete(start_server)
