@@ -100,7 +100,7 @@ class Room:
                     print('Error when sending message to theother user. Probably the other user left as well.')
                     self.trash.append(peerid)
                 finally:
-                    continue
+                    pass
         await self._cleanup()
 
         

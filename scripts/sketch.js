@@ -15,15 +15,13 @@ function setup() {
 }
 
 function draw() {
-    clear();
+    clear(); // Clear the canvas
+    
+    // Update things
     touchDetector.update();
-    // logger.log(touchDetector.touches.length);
-    userManager.updateLocalTouches(touchDetector.touches);
-    userManager.draw();
-    // if (canSend && detector.touches.length > 0) { 
-    //     socket.send(JSON.stringify(detector.touches));
-    // }
 
+    // Draw things
+    userManager.draw();
     logger.draw();
 }
 

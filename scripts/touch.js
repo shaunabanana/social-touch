@@ -82,6 +82,7 @@ class TouchDetector {
                 this.moved = true;
                 let force = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
                 this.touches = [new Touch(event.offsetX, event.offsetY, force.map(0, 300, 0, 1).constrain(0, 1))];
+                userManager.updateLocalTouches(this.touches);
             }
             event.preventDefault();
         }.bind(this), false);
@@ -93,6 +94,7 @@ class TouchDetector {
             } else {
                 this.touches = [];
             }
+            userManager.updateLocalTouches(this.touches);
             event.preventDefault();
         }.bind(this), false);
     }
@@ -102,6 +104,7 @@ class TouchDetector {
             let force = event.webkitForce === 0 ? event.webkitForce : event.webkitForce.map(1, 3, 0, 1);
             if (mouseIsPressed) force = 1;
             this.touches = [new Touch(event.offsetX, event.offsetY, force)];
+            userManager.updateLocalTouches(this.touches);
             event.preventDefault();
         }.bind(this), false);
     }
@@ -126,6 +129,7 @@ class TouchDetector {
             }
             this.touches = touches;
             this.moved = true;
+            userManager.updateLocalTouches(this.touches);
             event.preventDefault();
         }.bind(this), false);
 
@@ -141,17 +145,21 @@ class TouchDetector {
             } else {
                 this.touches = [];
             }
+            userManager.updateLocalTouches(this.touches);
             event.preventDefault();
         }.bind(this), false);
     }
 
     update () {
+        let touchChanged = false;
         for (let i in this.touches) {
             this.touches[i].age ++;
-            if (this.touches[i].age > 1) {
+            if (this.touches[i].age > 1 && !mouseIsPressed) {
                 this.touches.splice(i, 1);
+                touchChanged = true;
             }
         }
+        if (touchChanged) userManager.updateLocalTouches(this.touches);
     }
 
 }
