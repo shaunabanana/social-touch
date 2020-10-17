@@ -2,19 +2,27 @@ import json
 import asyncio
 import websockets
 
-connections = set()
+from room import Room, RoomManager
+
+manager = RoomManager()
 
 async def hello(websocket, path):
     connections.add(websocket)
+    userid = ''
+    username = ''
 
     try:
         while True:
-            data = await websocket.recv()
-            print(data)
+            text = await websocket.recv()
+            data = json.loads(text)
+            
+            if data['message'] == 'join':
+                userid = data['id']
+                username = data['name']
+                manager.add(websocket, data['id'], data['name'])
 
-            peers = connections.difference(set([websocket]))
-            for peer in peers:
-                await peer.send(data)
+            elif data['message'] == 'touch':
+                pass
 
     finally:
         connections.remove(websocket)

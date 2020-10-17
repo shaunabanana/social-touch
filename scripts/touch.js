@@ -4,6 +4,7 @@ class Touch {
         this.y = y;
         this.force = force ? force : 0;
         this.id = id ? id : 0;
+        this.age = 0;
     }
 }
 
@@ -47,17 +48,17 @@ class TouchDetector {
         console.log(supportsTouchForce, supportsMouse, supportsTouch, supportsPointer, supportsTouchForceChange);
 
         if (supportsMouse) {
-            this.text = '\nBinding force touch';
-            this.bindForceTouch();
+            logger.log('Binding force touch');
+            this.bindDafault();
         } else if (supportsTouch) {
-            this.text = '\nBinding 3D touch';
+            logger.log('Binding 3D touch');
             this.bind3DTouch();
         } else {
             if (supportsPointer) {
-                this.text = '\nBinding pointer';
+                logger.log('Binding pointer');
                 this.bindPointer();
             }
-            this.text += '\nBinding default';
+            logger.log('Binding default');
             this.bindDafault();
         }
 
@@ -72,7 +73,7 @@ class TouchDetector {
     bindDafault () {
         this.canvas.addEventListener('mousedown', function (event) {
             this.moved = false;
-            this.touches = [new Touch(event.offsetX, event.offsetY, 0.5)];
+            // this.touches = [new Touch(event.offsetX, event.offsetY, 0.5)];
             event.preventDefault();
         }.bind(this), false);
 
@@ -87,9 +88,11 @@ class TouchDetector {
 
         this.canvas.addEventListener('mouseup', function (event) {
             if (!this.moved) {
-                this.text += '\nclick';
+                logger.log('click');
+                this.touches = [new Touch(event.offsetX, event.offsetY, 1)];
+            } else {
+                this.touches = [];
             }
-            this.touches = [];
             event.preventDefault();
         }.bind(this), false);
     }
@@ -97,9 +100,8 @@ class TouchDetector {
     bindForceTouch () {
         this.canvas.addEventListener('mousemove', function (event) {
             let force = event.webkitForce === 0 ? event.webkitForce : event.webkitForce.map(1, 3, 0, 1);
-            if (mousePressed) force = 1;
+            if (mouseIsPressed) force = 1;
             this.touches = [new Touch(event.offsetX, event.offsetY, force)];
-            console.log(this.touches);
             event.preventDefault();
         }.bind(this), false);
     }
@@ -112,22 +114,44 @@ class TouchDetector {
     }
 
     bind3DTouch () {
+        this.canvas.addEventListener('touchstart', function (event) {
+            this.moved = false;
+            event.preventDefault();
+        }.bind(this), false);
+
         this.canvas.addEventListener('touchmove', function (event) {
             let touches = [];
             for (let touchEvent of event.touches) {
                 touches.push(new Touch(touchEvent.pageX, touchEvent.pageY, touchEvent.force))
             }
             this.touches = touches;
+            this.moved = true;
             console.log(this.touches);
+            event.preventDefault();
+        }.bind(this), false);
+
+        this.canvas.addEventListener('touchend', function (event) {
+            if (!this.moved) {
+                logger.log('click');
+                let touches = [];
+                for (let touchEvent of event.changedTouches) {
+                    this.text += '\n' + touchEvent.pageX + ' ' + touchEvent.pageY;
+                    touches.push(new Touch(touchEvent.pageX, touchEvent.pageY, 1));
+                }
+                this.touches = touches;
+            } else {
+                this.touches = [];
+            }
             event.preventDefault();
         }.bind(this), false);
     }
 
-
-    draw() {
-        text(this.text, 20, 20);
-        for (var touch of this.touches) {
-            circle(touch.x, touch.y, touch.force * 100 + 20);
+    update () {
+        for (let i in this.touches) {
+            this.touches[i].age ++;
+            if (this.touches[i].age > 1) {
+                this.touches.splice(i, 1);
+            }
         }
     }
 

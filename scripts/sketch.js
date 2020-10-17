@@ -1,35 +1,30 @@
-let detector;
-let socket;
+let logger;
+let touchDetector;
+let networkManager;
+let userManager;
 let canSend = false;
 let touches = [];
+let painter;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    detector = new TouchDetector(canvas);
-    console.log(detector);
-
-    socket = new WebSocket('ws://81.68.194.122:8765');
-
-    // Connection opened
-    socket.addEventListener('open', function (event) {
-        canSend = true;
-    });
-
-    // Listen for messages
-    socket.addEventListener('message', function (event) {
-        touches = JSON.parse(event.data);
-    });
+    logger = new Logger();
+    touchDetector = new TouchDetector(canvas);
+    networkManager = new NetworkManager();
+    userManager = new UserManager();
 }
 
 function draw() {
     clear();
-    detector.draw();
-    for (let touch of touches) {
-        circle(touch.x, touch.y, touch.force * 100 + 20);
-    }
-    if (canSend && detector.touches.length > 0) { 
-        socket.send(JSON.stringify(detector.touches));
-    }
+    touchDetector.update();
+    // logger.log(touchDetector.touches.length);
+    userManager.updateLocalTouches(touchDetector.touches);
+    userManager.draw();
+    // if (canSend && detector.touches.length > 0) { 
+    //     socket.send(JSON.stringify(detector.touches));
+    // }
+
+    logger.draw();
 }
 
 function touchStarted(event) {
