@@ -7,7 +7,6 @@ from room import Room, RoomManager
 manager = RoomManager()
 
 async def hello(websocket, path):
-    connections.add(websocket)
     userid = ''
     username = ''
 
@@ -19,13 +18,18 @@ async def hello(websocket, path):
             if data['message'] == 'join':
                 userid = data['id']
                 username = data['name']
-                manager.add(websocket, data['id'], data['name'])
+                await manager.add(websocket, data['id'], data['name'])
+                print(f'{username}({userid}) joined.')
 
             elif data['message'] == 'touch':
+                # print(f'{username}({userid}) is touching screen.')
+                await manager.publish(userid, data)
                 pass
 
     finally:
-        connections.remove(websocket)
+        await manager.remove(userid)
+        print(f'{username}({userid}) left. Closing connection.')
+        return
 
 print('Server running at port 8765...')
 start_server = websockets.serve(hello, "0.0.0.0", 8765)

@@ -10,7 +10,7 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     logger = new Logger();
     touchDetector = new TouchDetector(canvas);
-    networkManager = new NetworkManager();
+    networkManager = new NetworkManager('ws://127.0.0.1:8765');
     userManager = new UserManager();
 }
 

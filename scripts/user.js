@@ -1,15 +1,14 @@
 class User {
     constructor (id, name) {
         this.id = id ? id : nanoid();
-        this.name = name ? name : '';
+        this.name = name ? name : 'Anonymous';
         this.touches = [];
         this.painter = new ParticlePainter();
     }
 
-    updateLocalTouches(touches) {
+    updateTouches(touches) {
         this.touches = touches;
         this.painter.update(this.touches);
-        // networkManager.publishTouches(this, this.touches);
     }
 
     draw () {
@@ -21,20 +20,15 @@ class User {
 class UserManager {
     constructor () {
         this.localUser = new User();
-        this.remoteUsers = [];
+        this.remoteUsers = {};
     }
 
     addRemoteUser (id, name) {
-        this.remoteUsers.push(new User(id, name));
+        this.remoteUsers[id] = new User(id, name);
     }
 
     removeRemoteUser(id) {
-        for (var i = 0; i < this.remoteUsers.length; i++) {
-            if (this.remoteUsers[i].id === id) {
-                this.remoteUsers.splice(i, 1);
-                return;
-            }
-        }
+        delete this.remoteUsers[id];
     }
 
     onReadyToJoin() {
@@ -42,13 +36,18 @@ class UserManager {
     }
 
     updateLocalTouches(touches) {
-        this.localUser.updateLocalTouches(touches);
+        this.localUser.updateTouches(touches);
+        networkManager.publishTouches(this.localUser, touches);
+    }
+
+    updateRemoteTouches(id, touches) {
+        this.remoteUsers[id].updateTouches(touches);
     }
 
     draw () {
         this.localUser.draw();
-        for (let remoteUser of this.remoteUsers) {
-            remoteUser.draw();
+        for (let id of Object.keys(this.remoteUsers)) {
+            this.remoteUsers[id].draw();
         }
     }
 }

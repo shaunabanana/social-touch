@@ -21,11 +21,13 @@ class NetworkManager {
     _onWebsocketMessage (event) {
         let data = JSON.parse(event.data);
         if (data.message === 'join') {
-            logger.log(data.name + '(' + data.id + ') has joined!');
+            logger.log(data.name + ' (' + data.id + ') has joined!');
+            userManager.addRemoteUser(data.id, data.name);
         } else if (data.message === 'leave') {
-            logger.log(data.name + '(' + data.id + ') has left.');
+            logger.log(data.name + ' (' + data.id + ') has left.');
+            userManager.removeRemoteUser(data.id);
         } else if (data.message === 'touch') {
-            logger.log(data.name + '(' + data.id + ') is touching the screen.');
+            userManager.updateRemoteTouches(data.id, data.data);
         }
     }
 

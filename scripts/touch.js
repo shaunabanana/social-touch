@@ -126,7 +126,6 @@ class TouchDetector {
             }
             this.touches = touches;
             this.moved = true;
-            console.log(this.touches);
             event.preventDefault();
         }.bind(this), false);
 
