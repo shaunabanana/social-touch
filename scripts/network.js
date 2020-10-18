@@ -1,7 +1,7 @@
 class NetworkManager {
 
     constructor (address) {
-        this.address = address ? address : 'ws://192.168.31.10:8765';
+        this.address = address ? address : 'ws://81.68.194.122:8765';
         this.ready = false;
 
         // Start websocket connection
