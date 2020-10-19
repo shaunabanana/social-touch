@@ -2,7 +2,7 @@ class User {
     constructor (id, name, icon) {
         this.id = id ? id : nanoid();
         this.name = name ? name : 'Anonymous';
-        this.icon = icon ? icon : 'Anonymous';
+        this.icon = icon ? icon : null;
         this.touches = [];
         this.painter = new ParticlePainter(this);
     }

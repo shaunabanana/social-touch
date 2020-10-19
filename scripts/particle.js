@@ -136,8 +136,10 @@ class ParticlePainter {
                 fill(255, 255, 255, (1 - this.particles.length / 30) * 255);
                 textAlign(CENTER, CENTER);
                 text(this.user.name, particle.x, particle.y + 50);
-                tint(255, (1 - this.particles.length / 30) * 70);
-                image(this.user.icon, particle.x - 30, particle.y - 30, 60, 60);
+                if (this.user.icon) {
+                    tint(255, (1 - this.particles.length / 30) * 70);
+                    image(this.user.icon, particle.x - 30, particle.y - 30, 60, 60);
+                }
                 pop();
             }
         }
