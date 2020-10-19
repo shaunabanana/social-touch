@@ -21,8 +21,8 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     logger = new Logger();
     touchDetector = new TouchDetector(canvas);
-    // networkManager = new NetworkManager();
-    networkManager = new NetworkManager('ws://192.168.1.107:8765');
+    networkManager = new NetworkManager();
+    // networkManager = new NetworkManager('ws://192.168.1.107:8765');
     userManager = new UserManager();
     gameManager = new GameManager();
     promptManager = new PromptManager();
