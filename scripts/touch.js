@@ -83,14 +83,15 @@ class TouchDetector {
                 let force = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
                 this.touches = [new Touch(event.offsetX, event.offsetY, force.map(0, 300, 0, 1).constrain(0, 1))];
                 userManager.updateLocalTouches(this.touches);
+                gameManager.onTouchMove(this.touches);
             }
             event.preventDefault();
         }.bind(this), false);
 
         this.canvas.addEventListener('mouseup', function (event) {
             if (!this.moved) {
-                logger.log('click');
                 this.touches = [new Touch(event.offsetX, event.offsetY, 1)];
+                gameManager.onTouchClick(this.touches);
             } else {
                 this.touches = [];
             }
@@ -100,10 +101,27 @@ class TouchDetector {
     }
 
     bindForceTouch () {
+        this.canvas.addEventListener('mousedown', function (event) {
+            this.moved = false;
+            event.preventDefault();
+        }.bind(this), false);
+
         this.canvas.addEventListener('mousemove', function (event) {
             let force = event.webkitForce === 0 ? event.webkitForce : event.webkitForce.map(1, 3, 0, 1);
             if (mouseIsPressed) force = 1;
             this.touches = [new Touch(event.offsetX, event.offsetY, force)];
+            userManager.updateLocalTouches(this.touches);
+            gameManager.onTouchMove(this.touches);
+            event.preventDefault();
+        }.bind(this), false);
+
+        this.canvas.addEventListener('mouseup', function (event) {
+            if (!this.moved) {
+                this.touches = [new Touch(event.offsetX, event.offsetY, 1)];
+                gameManager.onTouchClick(this.touches);
+            } else {
+                this.touches = [];
+            }
             userManager.updateLocalTouches(this.touches);
             event.preventDefault();
         }.bind(this), false);
@@ -130,17 +148,18 @@ class TouchDetector {
             this.touches = touches;
             this.moved = true;
             userManager.updateLocalTouches(this.touches);
+            gameManager.onTouchMove(this.touches);
             event.preventDefault();
         }.bind(this), false);
 
         this.canvas.addEventListener('touchend', function (event) {
             if (!this.moved) {
-                logger.log('click');
                 let touches = [];
                 for (let touchEvent of event.changedTouches) {
                     this.text += '\n' + touchEvent.pageX + ' ' + touchEvent.pageY;
                     touches.push(new Touch(touchEvent.pageX, touchEvent.pageY, 1));
                 }
+                gameManager.onTouchClick(this.touches);
                 this.touches = touches;
             } else {
                 this.touches = [];

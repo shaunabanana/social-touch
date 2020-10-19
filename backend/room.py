@@ -1,4 +1,5 @@
 import json
+import random
 import websockets
 
 
@@ -7,6 +8,7 @@ class User:
         self.connection = connection
         self.id = uid
         self.name = name
+        self.currentGame = None
 
     def __eq__(self, user):
         return self.id == user.id
@@ -29,7 +31,15 @@ class Room:
     def __init__(self, maxusers=4):
         self.users = {}
         self.trash = []
+        self.names = {
+            'Anonymous Bear': False,
+            'Anonymous Bird': False,
+            'Anonymous Buffalo': False,
+            'Anonymous Cat': False
+        }
         self.max = maxusers
+        self.collaborating = set()
+        self.randomLocation = [random.random(), random.random()]
 
     def __getitem__(self, uid):
         return self.users[uid]
@@ -66,6 +76,17 @@ class Room:
             return
         self.users[user.id] = user
 
+        for name in self.names:
+            if not self.names[name]:
+                user.name = name
+                await user.send({
+                    'message': 'name',
+                    'id': user.id,
+                    'name': user.name
+                })
+                self.names[name] = True
+                break
+
         for uid in self.users:
             if user.id != uid:
                 await user.send({
@@ -86,6 +107,7 @@ class Room:
             'id': uid,
             'name': self.users[uid].name
         })
+        self.names[self.users[uid].name] = False
         del self.users[uid]
         
 
@@ -97,11 +119,46 @@ class Room:
                 try:
                     await self.users[peerid].send(message)
                 except websockets.exceptions.ConnectionClosedOK:
-                    print('Error when sending message to theother user. Probably the other user left as well.')
+                    print('Error when sending message to the other user. Probably the other user left as well.')
                     self.trash.append(peerid)
                 finally:
                     pass
         await self._cleanup()
+
+    def startGame(self, uid, game):
+        if uid not in self.users:
+            return
+        self.users[uid].currentGame = game
+
+    async def prepareCollaborativeGame(self, uid, game):
+        if uid not in self.users:
+            return
+        print(uid, 'is ready for', game)
+        self.collaborating.add(uid)
+        await self.publishRandomLocation()
+
+    async def publishRandomLocation(self):
+        for uid in self.collaborating:
+            try:
+                await self.users[uid].send({
+                    'message': 'swirl',
+                    'participants': len(self.collaborating),
+                    'data': self.randomLocation,
+                })
+            except websockets.exceptions.ConnectionClosedOK:
+                print('Error when sending message to a user. Probably the other user left as well.')
+                self.trash.append(uid)
+                self.collaborating.remove(uid)
+            finally:
+                pass
+        await self._cleanup()
+
+    async def score(self, uid):
+        if uid not in self.users:
+            return
+        self.randomLocation = [random.random(), random.random()]
+        self.collaborating = set()
+        # await self.publishRandomLocation()
 
         
         
@@ -134,6 +191,14 @@ class RoomManager:
     async def publish(self, uid, message):
         for room in self.rooms:
             await room.publish(uid, message)
+
+    async def notifyCollaborativeGame(self, uid, game):
+        for room in self.rooms:
+            await room.prepareCollaborativeGame(uid, game)
+
+    async def notifyCollaborativeGameScored(self, uid):
+        for room in self.rooms:
+            await room.score(uid)
 
 
 if __name__ == '__main__':

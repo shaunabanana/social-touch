@@ -24,7 +24,14 @@ async def hello(websocket, path):
             elif data['message'] == 'touch':
                 # print(f'{username}({userid}) is touching screen.')
                 await manager.publish(userid, data)
-                pass
+
+            elif data['message'] == 'game':
+                if data['data'] == 'TouchDotGame':
+                    await manager.notifyCollaborativeGame(data['id'], data['data'])
+                # await manager.publish(userid, data)
+
+            elif data['message'] == 'score':
+                await manager.notifyCollaborativeGameScored(data['id'])
 
     finally:
         await manager.remove(userid)

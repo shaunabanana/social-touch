@@ -8,3 +8,54 @@ html, body {
 canvas {
     display: block;
 }
+
+.prompts {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    padding-left: 10%;
+    padding-right: 10%;
+    pointer-events: none;
+}
+
+.prompt {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 0);
+
+    color: white;
+    padding: 1rem;
+    padding-left: 1.6rem;
+    padding-right: 1.6rem;
+    font-family: sans-serif;
+    margin: 0.5rem;
+    margin-bottom: 0rem;
+    backdrop-filter: blur(50px) brightness(60%);
+    -webkit-backdrop-filter: blur(50px) brightness(60%);
+    -moz-backdrop-filter: blur(50px) brightness(60%);
+    border-radius: 0.5rem;
+
+    opacity: 1.0;
+    transition: all 0.5s ease-in-out;
+}
+
+.prompt.appear {
+    opacity: 0.0;
+    transform: translate(-50%, -100%);
+    transition: all 0.5s ease-out;
+}
+
+.prompt.disappear {
+    opacity: 0.0;
+    transform: translate(-50%, 100%);
+    transition: all 0.5s ease-in;
+}
+
+.prompt div:first-child {
+    font-size: 1em;
+}
+
+.prompt div:last-child {
+    font-size: 0.9em;
+}

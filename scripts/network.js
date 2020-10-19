@@ -16,6 +16,7 @@ class NetworkManager {
         this.ready = true;
         logger.log('Connected to server.');
         userManager.onReadyToJoin();
+        gameManager.onReadyToGame();
     }
 
     _onWebsocketMessage (event) {
@@ -27,7 +28,17 @@ class NetworkManager {
             logger.log(data.name + ' (' + data.id + ') has left.');
             userManager.removeRemoteUser(data.id);
         } else if (data.message === 'touch') {
+            for (var i = 0; i < data.data.length; i++) {
+                data.data[i].x *= windowWidth;
+                data.data[i].y *= windowHeight;
+            }
             userManager.updateRemoteTouches(data.id, data.data);
+        } else if (data.message === 'prompt') {
+            promptManager.show(data.data);
+        } else if (data.message === 'name') {
+            userManager.setNameIcon(data.name);
+        } else if (data.message === 'swirl') {
+            gameManager.onSwirlUpdate(data.participants, data.data);
         }
     }
 
@@ -60,11 +71,33 @@ class NetworkManager {
 
     publishTouches (user, touches) {
         if (!this.ready) return;
+        for (var i = 0; i < touches.length; i++) {
+            touches[i].x /= windowWidth;
+            touches[i].y /= windowHeight;
+        }
         this.socket.send(JSON.stringify({
             id: user.id,
             name: user.name,
             message: 'touch',
             data: touches
+        }))
+    }
+
+    startGame (user, game) {
+        if (!this.ready) return;
+        this.socket.send(JSON.stringify({
+            id: user.id,
+            name: user.name,
+            message: 'game',
+            data: game
+        }))
+    }
+
+    notifyScored (user) {
+        if (!this.ready) return;
+        this.socket.send(JSON.stringify({
+            id: user.id,
+            message: 'score'
         }))
     }
 

@@ -11,6 +11,30 @@ Number.prototype.constrain = function (min, max) {
     return this;
 }
 
+// utility function for returning a promise that resolves after a delay
+function delay(t) {
+    return new Promise(function (resolve) {
+        setTimeout(resolve, t);
+    });
+}
+
+Promise.delay = function (fn, t) {
+    // fn is an optional argument
+    if (!t) {
+        t = fn;
+        fn = function () {};
+    }
+    return delay(t).then(fn);
+}
+
+Promise.prototype.delay = function (fn, t) {
+    // return chained promise
+    return this.then(function () {
+        return Promise.delay(fn, t);
+    });
+}
+
+
 function getDeviceType () {
     const ua = navigator.userAgent;
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
@@ -25,3 +49,10 @@ function getDeviceType () {
     }
     return "desktop";
 };
+
+
+function distance(x1, y1, x2, y2) {
+    return Math.sqrt( 
+        (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
+    );
+}
