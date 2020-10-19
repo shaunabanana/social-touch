@@ -39,7 +39,3 @@ function draw() {
     userManager.draw();
     // logger.draw();
 }
-
-function touchStarted(event) {
-    userStartAudio();
-}
