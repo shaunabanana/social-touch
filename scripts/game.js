@@ -159,7 +159,7 @@ class Game {
 
 class TouchScreenGame extends Game {
     setup() {
-        Promise.delay(this.greet.bind(this), 2000)
+        Promise.delay(this.greet.bind(this), 500)
             .delay(this.promptToTouch.bind(this), 5000);
     }
 
