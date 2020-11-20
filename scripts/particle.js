@@ -5,8 +5,8 @@ class Particle {
         this.y = y;
         this.scale = scale ? scale : 0;
         this.opacity = opacity ? opacity : 15;
-        this.r = r ? r : 255;
-        this.g = g ? g : 255;
+        this.r = r ? r : 220;
+        this.g = g ? g : 100;
         this.b = b ? b : 255;
         this.age = 0;
 
@@ -21,6 +21,7 @@ class Particle {
 
     draw (dontAge) {
         push();
+        blendMode(ADD);
         strokeWeight(1);
 
         stroke(this.r, this.g, this.b, this.opacity);
@@ -92,7 +93,11 @@ class Swirl {
 
 class ParticlePainter {
 
-    constructor (user) {
+    constructor (user, r, g, b, opacity) {
+        this.r = r ? r : 255;
+        this.g = g ? g : 255;
+        this.b = b ? b : 255;
+        this.opacity = opacity ? opacity : 15;
         this.particles = [];
         this.lastParticles = [];
         this.user = user;
@@ -114,8 +119,8 @@ class ParticlePainter {
     update (touches) {
         let lastParticles = [];
         for (let touch of touches) {
-            this.addParticle(new Particle(touch.x, touch.y, touch.force));
-            lastParticles.push(new Particle(touch.x, touch.y, 0.5));
+            this.addParticle(new Particle(touch.x, touch.y, touch.force, 15, this.r, this.g, this.b));
+            lastParticles.push(new Particle(touch.x, touch.y, 0.5, this.opacity, this.r, this.g, this.b));
         }
         if (lastParticles.length > 0) {
             this.lastParticles = lastParticles;
@@ -130,18 +135,6 @@ class ParticlePainter {
 
         for (var particle of this.lastParticles) {
             particle.draw(true);
-
-            if (this.lastParticles.length > 0 && this.particles.length < 20) {
-                push();
-                fill(255, 255, 255, (1 - this.particles.length / 30) * 255);
-                textAlign(CENTER, CENTER);
-                text(this.user.name, particle.x, particle.y + 50);
-                if (this.user.icon) {
-                    tint(255, (1 - this.particles.length / 30) * 70);
-                    image(this.user.icon, particle.x - 30, particle.y - 30, 60, 60);
-                }
-                pop();
-            }
         }
 
         

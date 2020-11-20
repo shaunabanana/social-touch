@@ -16,7 +16,6 @@ canvas {
     right: 0px;
     padding-left: 10%;
     padding-right: 10%;
-    pointer-events: none;
 }
 
 .prompt {
@@ -38,17 +37,19 @@ canvas {
 
     opacity: 1.0;
     transition: all 0.5s ease-in-out;
+
+    cursor: pointer;
 }
 
 .prompt.appear {
     opacity: 0.0;
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, -50%);
     transition: all 0.5s ease-out;
 }
 
 .prompt.disappear {
     opacity: 0.0;
-    transform: translate(-50%, 100%);
+    transform: translate(-50%, -50%);
     transition: all 0.5s ease-in;
 }
 
@@ -58,4 +59,108 @@ canvas {
 
 .prompt div:last-child {
     font-size: 0.9em;
+}
+
+
+.overlay-prompts {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.overlay-container {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.overlay {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease-in;
+    
+    pointer-events: auto;
+}
+
+.overlay.appear {
+    opacity: 0.0;
+    transition: all 0.3s ease-out;
+}
+
+.overlay.disappear {
+    opacity: 0.0;
+    transition: all 0.3s ease-in;
+}
+
+.overlay-prompt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 10rem;
+    transform: translate(-50%, -50%) scale(1);
+
+    color: black;
+    background: white;
+    padding: 1rem;
+    padding-left: 1.6rem;
+    padding-right: 1.6rem;
+    font-family: sans-serif;
+    margin: 0.5rem;
+    margin-bottom: 0rem;
+    border-radius: 0.5rem;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.3);
+
+    opacity: 1.0;
+    transition: all 0.3s ease-in-out;
+    
+    pointer-events: auto;
+}
+
+.overlay-prompt.appear {
+    opacity: 0.0;
+    transform: translate(-50%, -50%) scale(0.85);
+    transition: all 0.3s ease-out;
+}
+
+.overlay-prompt.disappear {
+    opacity: 0.0;
+    transform: translate(-50%, -50%) scale(0.85);
+    transition: all 0.3s ease-in;
+}
+
+.overlay-prompt-buttons {
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.overlay-prompt-buttons button {
+    padding: 0.4rem 1.2rem 0.4rem 1.2rem;
+    font-size: 0.9em;
+    color: white;
+    background: rgb(90,45,142);
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    box-shadow: 0px 3px 6px rgba(90,45,142, 0.3);
+    transition: all 0.2s ease-out;
+}
+
+.overlay-prompt-buttons button:hover {
+    background: rgb(126, 71, 189);
+    transition: all 0.1s ease-out;
+}
+
+.overlay-prompt-buttons button:active {
+    background:rgb(90,45,142);
+    transition: all 0.2s ease-out;
 }

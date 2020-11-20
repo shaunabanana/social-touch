@@ -1,7 +1,15 @@
 import json
 import random
+import asyncio
+import datetime
 import websockets
 
+from game import GetOthersToFollowGame, TouchDotGame
+
+GAMES = {
+    'GetOthersToFollowGame': GetOthersToFollowGame,
+    'TouchDotGame': TouchDotGame
+}
 
 class User:
     def __init__(self, connection, uid, name):
@@ -28,7 +36,10 @@ class User:
 
 
 class Room:
-    def __init__(self, maxusers=4):
+    def __init__(self, index, maxusers=2):
+        self.id = index
+        self.max = maxusers
+
         self.users = {}
         self.trash = []
         self.names = {
@@ -37,9 +48,10 @@ class Room:
             'Anonymous Buffalo': False,
             'Anonymous Cat': False
         }
-        self.max = maxusers
-        self.collaborating = set()
-        self.randomLocation = [random.random(), random.random()]
+        
+        self.ready = set()
+        self.game = None
+        self.gameObject = None
 
     def __getitem__(self, uid):
         return self.users[uid]
@@ -53,21 +65,40 @@ class Room:
     def __repr__(self):
         return self.users.__repr__()
 
+    def keys(self):
+        return self.users.keys()
+
     def isfull(self):
         return len(self.users) >= self.max
 
     def isempty(self):
         return len(self.users) == 0
 
+    async def log(self, message):
+        out = json.dumps({
+            'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f'),
+            'room': self.id,
+            'message': message
+        })
+        print(out)
+
+
     async def _cleanup(self):
         remaining = [user for user in self.users if user not in self.trash]
+        self.trash += [user for user in self.users if self.users[user].connection.closed]
+        print('Removing users', self.trash)
         for user in self.trash:
             for peer in remaining:
-                await peer.send({
-                    'message': 'leave',
-                    'id': self.users[user].id,
-                    'name': self.users[user].name
-                })
+                try:
+                    await self.users[peer].send({
+                        'message': 'leave',
+                        'id': self.users[user].id,
+                        'name': self.users[user].name
+                    })
+                    self.names[self.users[user].name.replace(' (You)', '')] = False
+                except:
+                    # print('Error when sending to user', self.users[peer])
+                    pass
             del self.users[user]
         self.trash = []
 
@@ -76,39 +107,70 @@ class Room:
             return
         self.users[user.id] = user
 
+        result = None
         for name in self.names:
             if not self.names[name]:
-                user.name = name
-                await user.send({
-                    'message': 'name',
-                    'id': user.id,
-                    'name': user.name
-                })
+                result = name
                 self.names[name] = True
                 break
+
+        if len(user.name) == 0:
+            user.name = result
+            await user.send({
+                'message': 'name',
+                'id': user.id,
+                'name': user.name
+            })
+        
+        user.icon = result
+        await user.send({
+            'message': 'icon',
+            'id': user.id,
+            'name': result
+        })
+
 
         for uid in self.users:
             if user.id != uid:
                 await user.send({
                     'message': 'join',
                     'id': self.users[uid].id,
-                    'name': self.users[uid].name
+                    'name': self.users[uid].name,
+                    'icon': self.users[uid].icon
                 })
 
                 await self.users[uid].send({
                     'message': 'join',
                     'id': user.id,
-                    'name': user.name
+                    'name': user.name,
+                    'icon': user.icon
                 })
 
+        await self.log({
+            'event': 'join',
+            'id': user.id,
+            'name': user.name,
+            'icon': user.icon
+        })
+
     async def remove(self, uid):
+        # print('Removing user', uid)
         await self.publish(uid, {
             'message': 'leave',
             'id': uid,
             'name': self.users[uid].name
         })
+        
+        await self.log({
+            'event': 'leave',
+            'id': self.users[uid].id,
+            'name': self.users[uid].name,
+            'icon': self.users[uid].icon
+        })
+
         self.names[self.users[uid].name] = False
         del self.users[uid]
+        self.ready.remove(uid)
         
 
     async def publish(self, uid, message):
@@ -119,46 +181,73 @@ class Room:
                 try:
                     await self.users[peerid].send(message)
                 except websockets.exceptions.ConnectionClosedOK:
-                    print('Error when sending message to the other user. Probably the other user left as well.')
+                    # print('Error when sending message to the other user. Probably the other user left as well.')
                     self.trash.append(peerid)
                 finally:
                     pass
-        await self._cleanup()
+        await self.log({
+            'event': message['message'],
+            'id': self.users[uid].id,
+            'name': self.users[uid].name,
+            'icon': self.users[uid].icon,
+            'data': message['data']
+        })
+        if len(self.trash) > 0:
+            await self._cleanup()
 
-    def startGame(self, uid, game):
-        if uid not in self.users:
-            return
-        self.users[uid].currentGame = game
-
-    async def prepareCollaborativeGame(self, uid, game):
-        if uid not in self.users:
-            return
-        print(uid, 'is ready for', game)
-        self.collaborating.add(uid)
-        await self.publishRandomLocation()
-
-    async def publishRandomLocation(self):
-        for uid in self.collaborating:
+    async def announce(self, message):
+        for uid in self.users:
             try:
-                await self.users[uid].send({
-                    'message': 'swirl',
-                    'participants': len(self.collaborating),
-                    'data': self.randomLocation,
-                })
+                await self.users[uid].send(message)
             except websockets.exceptions.ConnectionClosedOK:
-                print('Error when sending message to a user. Probably the other user left as well.')
+                # print('Error when sending message to the other user. Probably the other user left as well.')
                 self.trash.append(uid)
-                self.collaborating.remove(uid)
             finally:
                 pass
-        await self._cleanup()
 
-    async def score(self, uid):
+        await self.log({
+            'event': message['message'],
+            'id': 'announcement',
+            'name': 'announcement',
+            'data': message['data'] if 'data' in message else '',
+            'command': message['command'] if 'command' in message else ''
+        })
+
+        if len(self.trash) > 0:
+            await self._cleanup()
+
+    # def startGame(self, uid, game):
+    #     if uid not in self.users:
+    #         return
+    #     self.users[uid].currentGame = game
+
+    async def notifySyncedGame(self, uid, game):
         if uid not in self.users:
             return
-        self.randomLocation = [random.random(), random.random()]
-        self.collaborating = set()
-        # await self.publishRandomLocation()
+        
+        if self.game is None and game in GAMES:
+            self.game = GAMES[game]
+        
+        self.ready.add(uid)
+        if len(self.ready) == self.max and self.gameObject is None:
+            self.gameObject = self.game(self)
+            await self.gameObject.start()
+            await self.log({
+                'event': 'start-game',
+                'id': list(self.ready),
+                'data': game
+            })
+
+    async def notifySyncedGameUpdate(self, uid, data):
+        if uid not in self.users:
+            return
+        if self.gameObject is not None:
+            await self.gameObject.update(uid, data)
+
+    def terminateCurrentGame(self):
+        self.ready = set()
+        self.game = None
+        self.gameObject = None
 
         
         
@@ -166,7 +255,8 @@ class Room:
 
 class RoomManager:
     def __init__(self):
-        self.rooms = [ Room() ]
+        self.rooms = [ Room(0) ]
+        self.nextid = 1
 
     async def add(self, connection, uid, name):
         user = User(connection, uid, name)
@@ -177,7 +267,8 @@ class RoomManager:
                 await room.add(user)
                 return
         
-        self.rooms.append(Room())
+        self.rooms.append(Room(self.nextid))
+        self.nextid += 1
         await self.rooms[-1].add(user)
 
     async def remove(self, uid):
@@ -192,13 +283,13 @@ class RoomManager:
         for room in self.rooms:
             await room.publish(uid, message)
 
-    async def notifyCollaborativeGame(self, uid, game):
+    async def notifySyncedGame(self, uid, game):
         for room in self.rooms:
-            await room.prepareCollaborativeGame(uid, game)
+            await room.notifySyncedGame(uid, game)
 
-    async def notifyCollaborativeGameScored(self, uid):
+    async def notifySyncedGameUpdate(self, uid, data):
         for room in self.rooms:
-            await room.score(uid)
+            await room.notifySyncedGameUpdate(uid, data)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
 class NetworkManager {
 
     constructor (address) {
-        this.address = address ? address : 'ws://81.68.194.122:8765';
+        this.address = address ? address : 'wss://shengchen.design:8765';
+        // this.address = address ? address : 'ws://192.168.31.10:8765';
         this.ready = false;
 
         // Start websocket connection
@@ -15,7 +16,8 @@ class NetworkManager {
     _onWebsocketOpen (event) {
         this.ready = true;
         logger.log('Connected to server.');
-        userManager.onReadyToJoin();
+        promptManager.clear();
+        // userManager.onReadyToJoin();
         gameManager.onReadyToGame();
     }
 
@@ -23,7 +25,7 @@ class NetworkManager {
         let data = JSON.parse(event.data);
         if (data.message === 'join') {
             logger.log(data.name + ' (' + data.id + ') has joined!');
-            userManager.addRemoteUser(data.id, data.name);
+            userManager.addRemoteUser(data.id, data.name, data.icon);
         } else if (data.message === 'leave') {
             logger.log(data.name + ' (' + data.id + ') has left.');
             userManager.removeRemoteUser(data.id);
@@ -36,15 +38,28 @@ class NetworkManager {
         } else if (data.message === 'prompt') {
             promptManager.show(data.data);
         } else if (data.message === 'name') {
-            userManager.setNameIcon(data.name);
+            userManager.setName(data.name);
+        } else if (data.message === 'icon') {
+            userManager.setIcon(data.name);
         } else if (data.message === 'swirl') {
             gameManager.onSwirlUpdate(data.participants, data.data);
+        } else if (data.message === 'start') {
+            gameManager.onSyncGameStart();
+        } else if (data.message === 'command') {
+            gameManager.onSyncGameCommand(data.command, data.data);
         }
     }
 
     _onWebsocketClose (event) {
-        this.ready = false;
+        if (this.ready) {
+            promptManager.show([
+                '正在连接到服务器……🖥', 
+                'Connecting to the server...'
+            ]);
+        }
         logger.log('Connection to server is closed. Reconnecting...');
+        this.ready = false;
+        
         setTimeout(function () {
             this.socket = new WebSocket(this.address);
             this.socket.addEventListener('open', this._onWebsocketOpen.bind(this));
@@ -93,11 +108,12 @@ class NetworkManager {
         }))
     }
 
-    notifyScored (user) {
+    notifyGameState (user, data) {
         if (!this.ready) return;
         this.socket.send(JSON.stringify({
             id: user.id,
-            message: 'score'
+            message: 'game-update',
+            data: data
         }))
     }
 

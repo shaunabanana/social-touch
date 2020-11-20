@@ -11,7 +11,7 @@ class Touch {
 class TouchDetector {
 
     constructor(canvas, callbacks) {
-        console.log(canvas);
+        // console.log(canvas);
         this.canvas = canvas;
         this.callbacks = callbacks;
         this.device = getDeviceType();
@@ -45,7 +45,7 @@ class TouchDetector {
             supportsTouchForceChange = 'ontouchforcechange' in window.document;
         }
 
-        console.log(supportsTouchForce, supportsMouse, supportsTouch, supportsPointer, supportsTouchForceChange);
+        // console.log(supportsTouchForce, supportsMouse, supportsTouch, supportsPointer, supportsTouchForceChange);
 
         if (supportsMouse) {
             logger.log('Binding force touch');
@@ -129,7 +129,7 @@ class TouchDetector {
 
     bindPointer () {
         this.canvas.addEventListener('onpointermove', function (event) {
-            console.log(event);
+            // console.log(event);
             event.preventDefault();
         }.bind(this), false);
     }
@@ -173,7 +173,7 @@ class TouchDetector {
         let touchChanged = false;
         for (let i in this.touches) {
             this.touches[i].age ++;
-            if (this.touches[i].age > 1 && !mouseIsPressed) {
+            if (this.touches[i].age > 2 && !mouseIsPressed) {
                 this.touches.splice(i, 1);
                 touchChanged = true;
             }
